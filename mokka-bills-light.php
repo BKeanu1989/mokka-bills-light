@@ -1,7 +1,7 @@
 <?php
 /**
  *
- * Plugin Name: Mokka-Abrechnungen
+ * Plugin Name: Mokka-Abrechnungen-LIGHT
  *
  */
 
@@ -102,7 +102,7 @@ function load_custom_wp_admin_style($hook) {
     wp_enqueue_style( 'custom_bootstrap_admin_css', plugins_url('admin/css/custom_bootstrap.min.css', __FILE__) );
 }
 add_action( 'admin_enqueue_scripts', 'load_custom_wp_admin_style' );
-define('MOKKA_BILLS_PLUGIN_PATH', WP_PLUGIN_DIR . '/mokka-bills/');
+define('MOKKA_BILLS_LIGHT_PLUGIN_PATH', WP_PLUGIN_DIR . '/mokka-bills-light/');
 function plugin_prefix_function() {
 
     $dateNow = date("Y-m-d H:i:s");
@@ -110,7 +110,7 @@ function plugin_prefix_function() {
     $now->modify("+2 hours");
     $now = $now->format("Y-m-d H:i:s");
 
-    require_once(MOKKA_BILLS_PLUGIN_PATH .'admin/db-queries/create_table-upon_activation.php');
+    require_once(MOKKA_BILLS_LIGHT_PLUGIN_PATH .'admin/db-queries/create_table-upon_activation.php');
 
 
 
