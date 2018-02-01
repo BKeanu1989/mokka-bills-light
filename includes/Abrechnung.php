@@ -10,7 +10,7 @@ class Abrechnung {
 
   public function getOrdersInTimeFrame($from, $to) {
     global $wpdb;
-    $query = $wpdb->prepare("SELECT MAIN_POSTMETA.post_id FROM wp_mokkamerch_postmeta AS MAIN_POSTMETA JOIN wp_mokkamerch_postmeta AS EMAIL_POSTMETA ON MAIN_POSTMETA.post_id = EMAIL_POSTMETA.post_id AND EMAIL_POSTMETA.meta_key = '_billing_email' AND EMAIL_POSTMETA.meta_value <> 'service@mokka-merch.com'  WHERE MAIN_POSTMETA.meta_key = '_order_sold' AND MAIN_POSTMETA.meta_value BETWEEN %s AND %s;", $from, $to);
+    $query = $wpdb->prepare("SELECT MAIN_POSTMETA.post_id, MAIN_POSTMETA.meta_value AS order_sold_at FROM wp_mokkamerch_postmeta AS MAIN_POSTMETA JOIN wp_mokkamerch_postmeta AS EMAIL_POSTMETA ON MAIN_POSTMETA.post_id = EMAIL_POSTMETA.post_id AND EMAIL_POSTMETA.meta_key = '_billing_email' AND EMAIL_POSTMETA.meta_value <> 'service@mokka-merch.com'  WHERE MAIN_POSTMETA.meta_key = '_order_sold' AND MAIN_POSTMETA.meta_value BETWEEN %s AND %s;", $from, $to);
     echo $query;
     $results = $wpdb->get_results($query, ARRAY_A);
 
@@ -54,9 +54,9 @@ class Abrechnung {
     // echo $query;
 
     $results = $wpdb->get_results($query, ARRAY_A);
-    echo "<pre>";
-    print_r($results);
-    echo "</pre>";
+    // echo "<pre>";
+    // print_r($results);
+    // echo "</pre>";
 
     self::nonEmptyArtistBills($results);
     // echo "<pre>";
@@ -65,13 +65,16 @@ class Abrechnung {
   }
 
   public function nonEmptyArtistBills($data) {
-    $uniqueArtists = array_unique(array_column($data, 'artist_id'));
+    $uniqueArtists = array_unique(array_column($data, 'artist_name'));
     array_map(function($artist) {
       $this->artists[$artist] = [];
-      $this->artists[$artist]["products"] = [];
-      $this->artists[$artist]["artistDetails"] = [];
-
+      // $this->artists[$artist]["soldProducts"] = [];
+      // $this->artists[$artist]["artistDetails"] = [];
     }, $uniqueArtists);
+
+    foreach ($uniqueArtists as $key => $artistName) {
+      $this->artists[$artistName]["products"] = groupSameArtistIDs($data, $artistName);
+    }
   }
 
 
@@ -87,4 +90,57 @@ class Abrechnung {
     // echo "</pre>";
 
   }
+
+  public function getProductData($data = null) {
+    global $wpdb;
+
+    if ($data == null) {
+      $data = $this->artists;
+    }
+
+    foreach ($data as $artistName => $artistData) {
+      $productCount = count($artistData["products"]);
+      for($i = 0; $i < $productCount; $i++) {
+        // _article_type
+        //_product_production
+        // _thumbnail_id
+        $query = $wpdb->prepare("SELECT meta_value AS productId FROM {$wpdb->prefix}postmeta WHERE post_id = %d AND meta_key = '_product_production'", $artistData["products"][$i]["product_id"]);
+        $result = $wpdb->get_results($query, ARRAY_A);
+        $this->artists[$artistName]["products"][$i]["productProduction"] = $result[0]["productId"];
+      }
+    }
+  }
+
+  public function getVariationData($data = null) {
+    global $wpdb;
+
+    if ($data = null) {
+      $data = $this->artists;
+    }
+
+    foreach ($data as $artistName => $artistData) {
+      $productCount = count($artistData["products"]);
+      for($i = 0; $i < $productCount; $i++) {
+        // attribute_pa_groesse
+        // attribute_pa_farbe
+        // attribute_pa_modell
+        $query = $wpdb->prepare("SELECT meta_value AS productId FROM {$wpdb->prefix}postmeta WHERE post_id = %d AND meta_key = '_product_production'", $artistData["products"][$i]["variation_id"]);
+        $result = $wpdb->get_results($query, ARRAY_A);
+        $this->artists[$artistName]["products"][$i]["productProduction"] = $result[0]["productId"];
+      }
+    }
+
+
+  }
+
+}
+
+function groupSameArtistIDs($dataArray, $singleID) {
+  $array = [];
+  foreach($dataArray as $key => $value) {
+    if (in_array($singleID, $value)) {
+      $array[] = $value;
+    }
+  }
+  return $array;
 }
