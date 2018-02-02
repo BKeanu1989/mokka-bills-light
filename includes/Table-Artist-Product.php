@@ -36,3 +36,7 @@ class TableArtistProduct {
     }
   }
 }
+
+
+// add rohartikelnummern
+// basispreistabelle für künstler
