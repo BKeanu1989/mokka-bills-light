@@ -1,8 +1,13 @@
 <?php
 class Abrechnung {
   //
+  // public const PAYPAL_FIXED_VALUE = 0.35;
+  const PAYPAL_FIXED_VALUE = 0.35;
+  const PAYPAL_RATE = 1.9;
+  const SERVICE_FEE = 6.9 / 100;
+  const PICK_AND_PACK = 1.55;
+  const MWST = 1.19;
   public $orderIDs = [];
-
   public $orderItemIDs = [];
 
   public $orders = [];
@@ -11,6 +16,19 @@ class Abrechnung {
   public function __construct($from, $to) {
     self::getOrdersInTimeFrame($from, $to);
   }
+
+  /**
+   * Get all Order IDs & date of sold order
+   * @var string orderID
+   * @var string order_sold_at
+   * exlude: 'service@mokka-merch.com'
+   *
+   * sets orderIDs of instance
+   *
+   * @param  string $from [description]
+   * @param  string $to   [description]
+   * @return array       [description]
+   */
 
   public function getOrdersInTimeFrame($from, $to) {
     global $wpdb;
@@ -21,6 +39,12 @@ class Abrechnung {
     $this->orderIDs = $results;
     return $results;
   }
+
+/**
+ *
+ * @param  [type] $data [description]
+ * @return [type]       [description]
+ */
 
   public function getProductsInOrders($data = null) {
     global $wpdb;
@@ -61,22 +85,34 @@ class Abrechnung {
     }
 
     $orderItemIDsAsString = implode(',', $orderItemIDs);
-    $query = "SELECT {$wpdb->prefix}woocommerce_order_items.order_id,{$wpdb->prefix}artistProducts.artist_id, {$wpdb->prefix}artistProducts.artist_name, MAIN_ORDER_ITEMMETA.order_item_id, {$wpdb->prefix}artistProducts.product_id , MAIN_ORDER_ITEMMETA.meta_value AS variation_id, LINE_TOTAL_ORDER_ITEMMETA.meta_value AS line_price, LINE_TAX_ORDER_ITEMMETA.meta_value AS line_tax
-        FROM {$wpdb->prefix}woocommerce_order_itemmeta AS MAIN_ORDER_ITEMMETA
-        JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS LINE_TOTAL_ORDER_ITEMMETA
-          ON MAIN_ORDER_ITEMMETA.order_item_id = LINE_TOTAL_ORDER_ITEMMETA.order_item_id AND LINE_TOTAL_ORDER_ITEMMETA.meta_key = '_line_total'
-        JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS LINE_TAX_ORDER_ITEMMETA
-          ON MAIN_ORDER_ITEMMETA.order_item_id = LINE_TAX_ORDER_ITEMMETA.order_item_id AND LINE_TAX_ORDER_ITEMMETA.meta_key = '_line_tax'
-        JOIN {$wpdb->prefix}artistProducts
-          ON MAIN_ORDER_ITEMMETA.meta_value = {$wpdb->prefix}artistProducts.variation_id
-        JOIN {$wpdb->prefix}woocommerce_order_items ON MAIN_ORDER_ITEMMETA.order_item_id = {$wpdb->prefix}woocommerce_order_items.order_item_id
-        WHERE (MAIN_ORDER_ITEMMETA.meta_key = '_variation_id') AND MAIN_ORDER_ITEMMETA.order_item_id IN ($orderItemIDsAsString)";
-    // echo $query;
+    // $query = "SELECT {$wpdb->prefix}woocommerce_order_items.order_id,{$wpdb->prefix}artistProducts.artist_id, {$wpdb->prefix}artistProducts.artist_name, MAIN_ORDER_ITEMMETA.order_item_id, {$wpdb->prefix}artistProducts.product_id , MAIN_ORDER_ITEMMETA.meta_value AS variation_id, LINE_TOTAL_ORDER_ITEMMETA.meta_value AS line_price, LINE_TAX_ORDER_ITEMMETA.meta_value AS line_tax
+    //     FROM {$wpdb->prefix}woocommerce_order_itemmeta AS MAIN_ORDER_ITEMMETA
+    //     JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS LINE_TOTAL_ORDER_ITEMMETA
+    //       ON MAIN_ORDER_ITEMMETA.order_item_id = LINE_TOTAL_ORDER_ITEMMETA.order_item_id AND LINE_TOTAL_ORDER_ITEMMETA.meta_key = '_line_total'
+    //     JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS LINE_TAX_ORDER_ITEMMETA
+    //       ON MAIN_ORDER_ITEMMETA.order_item_id = LINE_TAX_ORDER_ITEMMETA.order_item_id AND LINE_TAX_ORDER_ITEMMETA.meta_key = '_line_tax'
+    //     JOIN {$wpdb->prefix}artistProducts
+    //       ON MAIN_ORDER_ITEMMETA.meta_value = {$wpdb->prefix}artistProducts.variation_id
+    //     JOIN {$wpdb->prefix}woocommerce_order_items ON MAIN_ORDER_ITEMMETA.order_item_id = {$wpdb->prefix}woocommerce_order_items.order_item_id
+    //     WHERE (MAIN_ORDER_ITEMMETA.meta_key = '_variation_id') AND MAIN_ORDER_ITEMMETA.order_item_id IN ($orderItemIDsAsString)";
+
+        $query = "SELECT {$wpdb->prefix}woocommerce_order_items.order_id,{$wpdb->prefix}artistProducts.artist_id, {$wpdb->prefix}artistProducts.artist_name, MAIN_ORDER_ITEMMETA.order_item_id, {$wpdb->prefix}artistProducts.product_id , MAIN_ORDER_ITEMMETA.meta_value AS variation_id, LINE_TOTAL_ORDER_ITEMMETA.meta_value AS line_price, LINE_TAX_ORDER_ITEMMETA.meta_value AS line_tax
+            FROM {$wpdb->prefix}woocommerce_order_itemmeta AS MAIN_ORDER_ITEMMETA
+            JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS LINE_TOTAL_ORDER_ITEMMETA
+              ON MAIN_ORDER_ITEMMETA.order_item_id = LINE_TOTAL_ORDER_ITEMMETA.order_item_id AND LINE_TOTAL_ORDER_ITEMMETA.meta_key = '_line_total'
+            JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS LINE_TAX_ORDER_ITEMMETA
+              ON MAIN_ORDER_ITEMMETA.order_item_id = LINE_TAX_ORDER_ITEMMETA.order_item_id AND LINE_TAX_ORDER_ITEMMETA.meta_key = '_line_tax'
+            JOIN {$wpdb->prefix}artistProducts
+              ON MAIN_ORDER_ITEMMETA.meta_value = {$wpdb->prefix}artistProducts.variation_id
+            JOIN {$wpdb->prefix}woocommerce_order_items ON MAIN_ORDER_ITEMMETA.order_item_id = {$wpdb->prefix}woocommerce_order_items.order_item_id
+            WHERE (MAIN_ORDER_ITEMMETA.meta_key = '_variation_id') AND MAIN_ORDER_ITEMMETA.order_item_id IN ($orderItemIDsAsString)";
+
+    echo $query;
 
     $results = $wpdb->get_results($query, ARRAY_A);
 
     self::nonEmptyArtistBills($results);
-
+    self::getArtistsData();
   }
 
   public function nonEmptyArtistBills($data) {
@@ -92,13 +128,32 @@ class Abrechnung {
 
 
 
-  public function getArtists() {
+  public function getArtistsData( $data = null) {
     global $wpdb;
 
-    $query = "SELECT {$wpdb->prefix}artists.artist_name, {$wpdb->prefix}artists.init_bill_number, {$wpdb->prefix}artists.vorname, {$wpdb->prefix}artists.nachname, {$wpdb->prefix}terms.term_id FROM {$wpdb->prefix}artists JOIN {$wpdb->prefix}terms ON {$wpdb->prefix}artists.slug = {$wpdb->prefix}terms.slug";
+    if ($data == null) {
+      $data = $this->artists;
+    }
 
-    $results = $wpdb->get_results($query, ARRAY_A);
+    // $query = "SELECT {$wpdb->prefix}artists.artist_name, {$wpdb->prefix}artists.init_bill_number, {$wpdb->prefix}artists.vorname, {$wpdb->prefix}artists.nachname, {$wpdb->prefix}terms.term_id, {$wpdb->prefix}artists.brutto, {$wpdb->prefix}artists.registration FROM {$wpdb->prefix}artists JOIN {$wpdb->prefix}terms ON {$wpdb->prefix}artists.slug = {$wpdb->prefix}terms.slug";
 
+    foreach($data AS $artistName => $artistData) {
+      $query = $wpdb->prepare("SELECT artist_name, init_bill_number, vorname, nachname, brutto, registration FROM {$wpdb->prefix}artists WHERE artist_name = %s", $artistName);
+      $results = $wpdb->get_results($query, ARRAY_A);
+
+      // echo "<pre>";
+      // print_r($results);
+      // echo "</pre>";
+
+      $this->artists[$artistName]["artistDetails"] = [];
+      $this->artists[$artistName]["artistDetails"]["artistName"] = $results[0]["artist_name"];
+      $this->artists[$artistName]["artistDetails"]["initBillNumber"] = $results[0]["init_bill_number"];
+      $this->artists[$artistName]["artistDetails"]["firstName"] = $results[0]["vorname"];
+      $this->artists[$artistName]["artistDetails"]["lastName"] = $results[0]["nachname"];
+      $this->artists[$artistName]["artistDetails"]["registration"] = $results[0]["registration"];
+      $this->artists[$artistName]["artistDetails"]["brutto"] = $results[0]["brutto"];
+
+    }
   }
 
   public function getProductData($data = null) {
@@ -125,6 +180,21 @@ class Abrechnung {
         // to add order_sold_at
         $key = array_search($orderID, array_column($this->orderIDs, 'order_id'));
         $this->artists[$artistName]["products"][$i]["order_sold_at"] = $this->orderIDs[$key]["order_sold_at"];
+
+
+        // TODO 2 bestellungen in einer order
+
+        $orderID = $this->artists[$artistName]["products"][$i]["order_id"];
+
+        $queryForShippingCost = $wpdb->prepare("SELECT {$wpdb->prefix}woocommerce_order_itemmeta.meta_value as shipping_cost
+          FROM {$wpdb->prefix}woocommerce_order_items
+          JOIN {$wpdb->prefix}woocommerce_order_itemmeta ON {$wpdb->prefix}woocommerce_order_items.order_item_id = {$wpdb->prefix}woocommerce_order_itemmeta.order_item_id AND {$wpdb->prefix}woocommerce_order_itemmeta.meta_key = 'cost'
+          WHERE {$wpdb->prefix}woocommerce_order_items.order_id = %s", $orderID);
+          echo "<br>";
+          echo $queryForShippingCost;
+        $shippingCost = $wpdb->get_var($queryForShippingCost);
+
+        $this->artists[$artistName]["products"][$i]["orderShippingCost"] = $shippingCost;
 
       }
     }
@@ -169,9 +239,57 @@ class Abrechnung {
       $productCount = count($artistData["products"]);
       for($i = 0; $i < $productCount; $i++) {
 
-        calculateMarge($this->artists[$artistName]["products"][$i]);
+        self::calculateMarge($this->artists[$artistName]["products"][$i], $this->artists[$artistName]["artistDetails"]["brutto"]);
       }
     }
+  }
+
+  function setPickAndPack(&$singleProductArray) {
+
+  }
+
+  function calculateMarge(&$singleProductArray, $brutto) {
+    // $netto = true;
+    // $brutto ? $netto = false : $netto = true;
+    $onDemand = true;
+
+    if ($singleProductArray["productProduction"] == 'sieb') {
+      $onDemand = false;
+    }
+
+    $onDemand ? self::calculateMargeOnDemand($singleProductArray, $brutto) : self::calculateMargeSieb($singleProductArray, $brutto);
+
+  }
+
+  function calculateMargeOnDemand(&$singleProductArray, $brutto) {
+
+    $brutto ? $divider = 1 : $divider = 1.19;
+
+    $singleProductArray["marge"] = (($singleProductArray["line_price"] + $singleProductArray["line_tax"] - $singleProductArray["basis_preis"] ) / $divider) ;
+  }
+
+  function calculateMargeSieb(&$singleProductArray, $brutto) {
+
+    $payPalRate = self::PAYPAL_RATE;
+    $payPalfixedValue = self::PAYPAL_FIXED_VALUE;
+    $pickAndPack = self::PICK_AND_PACK;
+    $mokkaFee = self::SERVICE_FEE;
+    $mwst = self:: MWST;
+
+    $sellingPrice = $singleProductArray["line_price"] + $singleProductArray["line_tax"];
+    $shipping = $singleProductArray["orderShippingCost"];
+    $berechnePayPal = $payPalfixedValue + ($payPalRate * ($shipping + $sellingPrice) / 100);
+
+    $mokkaZwischenMarge = ceilFloat($berechnePayPal + $pickAndPack + ($mokkaFee * $sellingPrice));
+
+    if ($brutto) {
+      $mokkaMarge = $mokkaZwischenMarge * $mwst;
+    } else {
+      $mokkaMarge = $mokkaZwischenMarge + $singleProductArray["line_tax"];
+    }
+
+    $singleProductArray["marge"] = $sellingPrice - $mokkaMarge;
+
   }
 }
 
@@ -185,26 +303,12 @@ function groupSameArtistIDs($dataArray, $singleID) {
   return $array;
 }
 
-function calculateMarge(&$singleProductArray) {
-  $netto = false;
-  $onDemand = true;
-  if (isset($singleProductArray["netto"])) {
-    $netto = $singleProductArray["netto"];
-  }
-
-
-
-  if ($singleProductArray["productProduction"] == 'sieb') {
-    $onDemand = false;
-  }
-  $onDemand ? calculateMargeOnDemand($singleProductArray) : calculateMargeSieb($singleProductArray);
-
-}
-
-function calculateMargeOnDemand(&$singleProductArray) {
-  $singleProductArray["marge"] = (($singleProductArray["line_price"] + $singleProductArray["line_tax"] - $singleProductArray["basis_preis"] ) / 1.19) ;
-}
-
-function calculateMargeSieb(&$singleProductArray) {
-
+/**
+ * always rounds an float up to the second digit
+ * @param  float $number [description]
+ * @return float          [description]
+ */
+function ceilFloat($number) {
+  $roundedUP = ceil($number * 100);
+  return $roundedUP / 100;
 }
