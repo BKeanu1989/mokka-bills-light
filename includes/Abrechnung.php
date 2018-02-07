@@ -86,7 +86,7 @@ class Abrechnung {
 
     $orderItemIDsAsString = implode(',', $orderItemIDs);
 
-        $query = "SELECT {$wpdb->prefix}woocommerce_order_items.order_id AS orderID,{$wpdb->prefix}artistProducts.artist_id AS artistID, {$wpdb->prefix}artistProducts.artist_name AS artistName, MAIN_ORDER_ITEMMETA.order_item_id AS orderItemID, {$wpdb->prefix}artistProducts.product_id as productID, MAIN_ORDER_ITEMMETA.meta_value AS variation_id, LINE_TOTAL_ORDER_ITEMMETA.meta_value AS line_price, LINE_TAX_ORDER_ITEMMETA.meta_value AS line_tax
+        $query = "SELECT {$wpdb->prefix}woocommerce_order_items.order_id AS orderID, {$wpdb->prefix}woocommerce_order_items.order_item_name AS productName ,{$wpdb->prefix}artistProducts.artist_id AS artistID, {$wpdb->prefix}artistProducts.artist_name AS artistName, MAIN_ORDER_ITEMMETA.order_item_id AS orderItemID, {$wpdb->prefix}artistProducts.product_id as productID, MAIN_ORDER_ITEMMETA.meta_value AS variation_id, LINE_TOTAL_ORDER_ITEMMETA.meta_value AS line_price, LINE_TAX_ORDER_ITEMMETA.meta_value AS line_tax
             FROM {$wpdb->prefix}woocommerce_order_itemmeta AS MAIN_ORDER_ITEMMETA
             JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS LINE_TOTAL_ORDER_ITEMMETA
               ON MAIN_ORDER_ITEMMETA.order_item_id = LINE_TOTAL_ORDER_ITEMMETA.order_item_id AND LINE_TOTAL_ORDER_ITEMMETA.meta_key = '_line_total'
