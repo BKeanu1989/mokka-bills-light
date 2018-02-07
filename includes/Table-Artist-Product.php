@@ -27,9 +27,10 @@ class TableArtistProduct {
         }, $variationsForSingleProduct);
 
         $artistID = $artist['artist_nummer'];
+        $artistName = $artist['artist_name'];
         // $serializedVariations = maybe_serialize($variationIDs);
         foreach ($variationIDs as $key => $singleVariationID) {
-          $query = $wpdb->prepare("INSERT INTO {$wpdb->prefix}artistProducts (artist_name, artist_id, product_id, variation_id) VALUES (%s, %d, %d, %s)", $artist['artist_name'], $artistID, $singleProduct,$singleVariationID);
+          $query = $wpdb->prepare("INSERT INTO {$wpdb->prefix}artistProducts (artist_name, artist_id, product_id, variation_id) VALUES (%s, %d, %d, %s)", $artistName, $artistID, $singleProduct,$singleVariationID);
           $wpdb->query($query);
         }
       }
