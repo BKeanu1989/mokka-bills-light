@@ -4,7 +4,7 @@ class TableArtistProduct {
 
   public function __construct() {
     global $wpdb;
-    $wpdb->query("CREATE TABLE IF NOT EXISTS {$wpdb->prefix}artistProducts (id INT(255) AUTO_INCREMENT PRIMARY KEY, artist_name varchar(40) NOT NULL, artist_id INT(255) NOT NULL, product_name varchar(50) NOT NULL,product_id INT(255) NOT NULL, extra_charge FLOAT(20), variation_id INT(255) NOT NULL)");
+    $wpdb->query("CREATE TABLE IF NOT EXISTS {$wpdb->prefix}artistProducts (id INT(255) AUTO_INCREMENT PRIMARY KEY, artist_name varchar(40) NOT NULL, artist_id INT(255) NOT NULL, product_name varchar(50) NOT NULL,product_id INT(255) NOT NULL, extra_charge DECIMAL(5,2), variation_id INT(255) NOT NULL)");
 
     self::insertIntoTable();
   }

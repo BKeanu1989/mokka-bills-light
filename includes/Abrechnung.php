@@ -119,6 +119,13 @@ class Abrechnung {
 /**
  * Add artistDetails to Abrechnung->artists
  * @param  [type] $data default = $this->parents
+ * @var string artistName
+ * @var int initBillNumber
+ * @var string firstName
+ * @var string lastName
+ * @var date registration
+ * @var boolean brutto
+ * @var decimal extraCharge
  * @return [type]       [description]
  */
 
@@ -130,7 +137,7 @@ class Abrechnung {
     }
 
     foreach($data AS $artistName => $artistData) {
-      $query = $wpdb->prepare("SELECT artist_name, init_bill_number, vorname, nachname, brutto, registration FROM {$wpdb->prefix}artists WHERE artist_name = %s", $artistName);
+      $query = $wpdb->prepare("SELECT artist_name, init_bill_number, vorname, nachname, brutto, registration, extra_charge FROM {$wpdb->prefix}artists WHERE artist_name = %s", $artistName);
       $results = $wpdb->get_row($query, ARRAY_A);
 
       $this->artists[$artistName]["artistDetails"] = [];
@@ -140,12 +147,17 @@ class Abrechnung {
       $this->artists[$artistName]["artistDetails"]["lastName"] = $results["nachname"];
       $this->artists[$artistName]["artistDetails"]["registration"] = $results["registration"];
       $this->artists[$artistName]["artistDetails"]["brutto"] = $results["brutto"];
+      $this->artists[$artistName]["artistDetails"]["extraCharge"] = $results["extra_charge"];
 
     }
   }
 
   /**
-   * add productProduction (onDemand / Sieb) & oderShippingCost
+   * add productProduction (onDemand / Sieb) & oderShippingCost & extra_charge
+   * @var string productProduction
+   * @var float orderShippingCost
+   * @var float extraCharge
+   * @var int orderID
    * @param  [type] $data [description]
    * @return [type]       [description]
    */
@@ -161,17 +173,18 @@ class Abrechnung {
       $productCount = count($artistData["products"]);
       for($i = 0; $i < $productCount; $i++) {
         $productID = $artistData["products"][$i]["productID"];
-        $orderID = $artistData["products"][$i]["orderID"];
         $query = $wpdb->prepare("SELECT meta_value AS productProduction FROM {$wpdb->prefix}postmeta WHERE post_id = %d AND meta_key = '_product_production'", $productID);
         $result = $wpdb->get_row($query, ARRAY_A);
         $this->artists[$artistName]["products"][$i]["productProduction"] = $result["productProduction"];
+
+        $orderID = $artistData["products"][$i]["orderID"];
+        // $orderID = $this->artists[$artistName]["products"][$i]["orderID"];
 
         // find value of order_id in $this->orderIDs
         // to add order_sold_at
         $key = array_search($orderID, array_column($this->orderIDs, 'order_id'));
         $this->artists[$artistName]["products"][$i]["orderSoldAt"] = $this->orderIDs[$key]["order_sold_at"];
 
-        $orderID = $this->artists[$artistName]["products"][$i]["orderID"];
 
         $queryForShippingCost = $wpdb->prepare("SELECT {$wpdb->prefix}woocommerce_order_itemmeta.meta_key,  {$wpdb->prefix}woocommerce_order_itemmeta.meta_value
         FROM {$wpdb->prefix}woocommerce_order_items
@@ -186,6 +199,14 @@ class Abrechnung {
 
         // $shippingNetto = $shippingData[]
         $this->artists[$artistName]["products"][$i]["orderShippingCost"] = $shippingCost;
+
+        // TODO assumes extra_charge is product dependend (NOT variation dependend)
+
+        $queryForExtraCharge = $wpdb->prepare("SELECT extra_charge FROM {$wpdb->prefix}artistProducts WHERE product_id = %d LIMIT 1", $productID);
+        echo "queryForExtraCharge: " . $queryForExtraCharge;
+        $extraChargeResults = $wpdb->get_row($queryForExtraCharge, ARRAY_A);
+
+        $this->artists[$artistName]["products"][$i]["extraCharge"] = $extraChargeResults["extra_charge"];
 
       }
     }
@@ -245,12 +266,12 @@ class Abrechnung {
       $productCount = count($artistData["products"]);
       for($i = 0; $i < $productCount; $i++) {
 
-        self::calculateMarge($this->artists[$artistName]["products"][$i], $this->artists[$artistName]["artistDetails"]["brutto"]);
+        self::calculateMarge($this->artists[$artistName]["products"][$i], $this->artists[$artistName]["artistDetails"]["brutto"], $this->artists[$artistName]["artistDetails"]["extraCharge"]);
       }
     }
   }
 
-  function calculateMarge(&$singleProductArray, $brutto) {
+  public function calculateMarge(&$singleProductArray, $brutto, $artistExtraCharge) {
     // $netto = true;
     // $brutto ? $netto = false : $netto = true;
     $onDemand = true;
@@ -259,18 +280,19 @@ class Abrechnung {
       $onDemand = false;
     }
 
-    $onDemand ? self::calculateMargeOnDemand($singleProductArray, $brutto) : self::calculateMargeSieb($singleProductArray, $brutto);
+    $onDemand ? self::calculateMargeOnDemand($singleProductArray, $brutto, $artistExtraCharge) : self::calculateMargeSieb($singleProductArray, $brutto, $artistExtraCharge);
 
   }
 
-  function calculateMargeOnDemand(&$singleProductArray, $brutto) {
+  public function calculateMargeOnDemand(&$singleProductArray, $brutto, $artistExtraCharge) {
 
     $brutto ? $divider = 1 : $divider = 1.19;
-
-    $singleProductArray["marge"] = (($singleProductArray["line_price"] + $singleProductArray["line_tax"] - $singleProductArray["basicPrice"] ) / $divider) ;
+    $totalExtraCharge = $artistExtraCharge + $singleProductArray["extraCharge"];
+    echo "{$singleProductArray["productName"]}: {$totalExtraCharge}";
+    $singleProductArray["marge"] = (($singleProductArray["line_price"] + $singleProductArray["line_tax"] - $singleProductArray["basicPrice"] - $totalExtraCharge ) / $divider) ;
   }
 
-  function calculateMargeSieb(&$singleProductArray, $brutto) {
+  public function calculateMargeSieb(&$singleProductArray, $brutto, $artistExtraCharge) {
 
     $payPalRate = self::PAYPAL_RATE;
     $payPalfixedValue = self::PAYPAL_FIXED_VALUE;
@@ -283,15 +305,15 @@ class Abrechnung {
     $payPalCosts = $payPalfixedValue + ($payPalRate * ($shipping + $sellingPrice) / 100);
 
     $mokkaZwischenMarge = ceilFloat($payPalCosts + $pickAndPack + ($mokkaFee * $sellingPrice));
+    $totalExtraCharge = $artistExtraCharge + $singleProductArray["extraCharge"];
+
 
     if ($brutto) {
       $mokkaMarge = $mokkaZwischenMarge * $mwst;
     } else {
       $mokkaMarge = $mokkaZwischenMarge + $singleProductArray["line_tax"];
     }
-
-    $singleProductArray["marge"] = $sellingPrice - $mokkaMarge;
-
+    $singleProductArray["marge"] = $sellingPrice - $mokkaMarge - $totalExtraCharge;
   }
 }
 
