@@ -111,9 +111,6 @@ function plugin_prefix_function() {
     $now = $now->format("Y-m-d H:i:s");
 
     require_once(MOKKA_BILLS_LIGHT_PLUGIN_PATH .'admin/db-queries/create_table-upon_activation.php');
-
-
-
 }
 
 

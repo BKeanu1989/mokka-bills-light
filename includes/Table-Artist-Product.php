@@ -9,7 +9,6 @@ class TableArtistProduct {
     self::insertIntoTable();
   }
 
-  /** insert data into table */
   public function insertIntoTable() {
     global $wpdb;
     $allArtists = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}artists", ARRAY_A);
@@ -21,15 +20,15 @@ class TableArtistProduct {
       }, $getProducts);
 
       foreach ($allProductIDs as $key => $singleProduct) {
-        $variationsForSingleProduct = $wpdb->get_results("SELECT {$wpdb->prefix}posts.ID AS variation_id, PRODUCT_NAME.post_title AS product_name FROM {$wpdb->prefix}posts JOIN {$wpdb->prefix}posts as PRODUCT_NAME ON {$wpdb->prefix}posts.post_parent = PRODUCT_NAME.ID WHERE {$wpdb->prefix}posts.post_parent = {$singleProduct};", ARRAY_A);
+        $variationsForSingleProduct = $wpdb->get_results("SELECT {$wpdb->prefix}posts.ID AS variation_id, PRODUCT_NAME.post_title AS product_name FROM {$wpdb->prefix}posts JOIN {$wpdb->prefix}posts as PRODUCT_NAME ON {$wpdb->prefix}posts.post_parent = PRODUCT_NAME.ID WHERE {$wpdb->prefix}posts.post_parent = {$singleProduct} AND {$wpdb->prefix}posts.post_type = 'product_variation'", ARRAY_A);
 
         $variationIDs = array_map(function($singleVariation) {
           return $singleVariation["variation_id"];
         }, $variationsForSingleProduct);
 
         if (count($variationIDs) > 0) {
-          $artistID = $artist['artist_nummer'];
           $artistName = $artist['artist_name'];
+          $artistID = $artist['artist_nummer'];
           $productName = $variationsForSingleProduct[0]["product_name"];
           // $serializedVariations = maybe_serialize($variationIDs);
           foreach ($variationIDs as $key => $singleVariationID) {
