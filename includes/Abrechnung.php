@@ -1,9 +1,9 @@
 <?php
 class Abrechnung {
-  //
+  
   // public const PAYPAL_FIXED_VALUE = 0.35;
-  const PAYPAL_FIXED_VALUE = 0.35;
-  const PAYPAL_RATE = 1.9;
+  // const PAYPAL_FIXED_VALUE = 0.35;
+  // const PAYPAL_RATE = 1.9;
   const SERVICE_FEE = 6.9 / 100;
   const PICK_AND_PACK = 1.55;
   const MWST = 1.19;

@@ -12,15 +12,13 @@ if (isset($_POST['chosen'])) {
     global $wpdb;
     print_r($_POST);
 
-    include_once((plugin_dir_path(__FILE__).'db-queries/update-order-status.php'));
-    include_once((plugin_dir_path(__FILE__).'db-queries/insert_new.php'));
 //    $tmp_table_BILL_DATA_SUMMARY = $wpdb->get_results('SELECT * FROM BILL_DATA_SUMMARY_JOINED_ARTISTS_PERM_TABLE_tmp', ARRAY_A);
 //    echo "<pre>";
 //    print_r($tmp_table_BILL_DATA_SUMMARY);
 //    echo "</pre>";
 }
 ?>
-    <form action="" method="POST">
+    <!-- <form action="" method="POST">
         <div class="form-group">
             <label for="from">Daten ziehen von:</label>
             <input type="text" id="from" name="from" class="form-control" value="<?php if (isset($_POST['chosen'])) echo $_POST['from'] ?>">
@@ -30,5 +28,16 @@ if (isset($_POST['chosen'])) {
             <input type="text" id="to" name="to" class="form-control" value="<?php if (isset($_POST['chosen'])) echo $_POST['to'] ?>">
         </div>
         <input type="submit" name="chosen">
-    </form>
+    </form> -->
+
 </div>
+<?php
+// implement auto loading
+
+    include_once((plugin_dir_path(__FILE__).'../includes/Abrechnung.php'));
+
+    $test = new Abrechnung("2018-05-01", "2018-05-31");
+    echo "<pre>";
+    var_dump($test);
+    
+    echo "</pre>";
